@@ -1,0 +1,80 @@
+#+TITLE: Clouseau installation
+#+OPTIONS: ^:nil
+#+PROPERTY: header-args:sh :session *shell clouseau-installation sh* :results silent raw
+#+PROPERTY: header-args:python :session *shell clouseau-installation python* :results silent raw
+
+** System environment
+
+** Install java
+
+#+BEGIN_SRC sh
+yum install java-11-openjdk
+#+END_SRC
+
+** Download and unpack clouseau
+
+#+BEGIN_SRC sh
+curl -L https://github.com/cloudant-labs/clouseau/releases/download/2.17.0/clouseau-2.17.0-dist.zip > /opt/clouseau-2.17.0-dist.zip
+#+END_SRC
+
+#+BEGIN_SRC sh
+cd /opt
+unzip clouseau-2.17.0-dist.zip
+#+END_SRC
+
+** Configure clouseau
+
+=/etc/clouseau/clouseau.ini=
+
+#+BEGIN_SRC conf :tangle etc/clouseau/clouseau.ini
+[clouseau]
+
+; the name of the Erlang node created by the service, leave this unchanged
+name=clouseau@127.0.0.1
+
+; set this to the same distributed Erlang cookie used by the CouchDB nodes
+cookie=monster
+
+; the path where you would like to store the search index files
+dir=/var/lib/clouseau
+
+; the number of search indexes that can be open simultaneously
+max_indexes_open=500
+#+END_SRC
+
+=/etc/clouseau/log4j.properties=
+
+#+BEGIN_SRC conf :tangle etc/clouseau/log4j.properties
+log4j.rootLogger=debug, CONSOLE
+log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
+log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
+log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %c [%p] %m%n
+#+END_SRC
+
+** Create user and datadir
+
+#+BEGIN_SRC sh
+useradd clouseau
+mkdir /var/lib/clouseau
+chown clouseau:clouseau /var/lib/clouseau
+#+END_SRC
+
+** Manual server run
+
+#+BEGIN_SRC sh
+java -server \
+     -Xmx2G \
+     -Dsun.net.inetaddr.ttl=30 \
+     -Dsun.net.inetaddr.negative.ttl=30 \
+     -Dlog4j.configuration=file:/etc/clouseau/log4j.properties \
+     -XX:OnOutOfMemoryError="kill -9 %p" \
+     -XX:+UseConcMarkSweepGC \
+     -XX:+CMSParallelRemarkEnabled \
+     -classpath '/opt/clouseau-2.17.0/*' \
+     com.cloudant.clouseau.Main \
+     /etc/clouseau/clouseau.ini
+#+END_SRC
+
+** References
+
+- https://docs.couchdb.org/en/master/install/search.html#install-search
