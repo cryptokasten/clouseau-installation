@@ -8,7 +8,7 @@
 ** Install java
 
 #+BEGIN_SRC sh
-yum install java-11-openjdk
+yum install java-1.8.0-openjdk-headless
 #+END_SRC
 
 ** Download and unpack clouseau
